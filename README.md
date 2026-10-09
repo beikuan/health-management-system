@@ -58,6 +58,18 @@ docker compose --env-file .env up -d mysql
 
 演示账号为 `demo`，密码为 `demo123`。这些只是本地学习数据，公开部署前应删除 `V2__add_anonymized_demo_data.sql` 或修改账号。
 
+#### 使用 Navicat 和本机 MySQL
+
+Navicat 是数据库管理客户端，仍需确保本机 MySQL 8 服务已经启动。在 Navicat 中连接 MySQL 后新建查询，创建一个空的专用数据库：
+
+```sql
+CREATE DATABASE IF NOT EXISTS health
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+```
+
+不要将 Flyway 直接指向旧项目已经存在数据表的数据库（例如旧的 `test` 库）。旧表缺少新版运动类型、运动时长和平均心率等字段，并且没有 `flyway_schema_history`，会造成启动或查询失败。使用新的空 `health` 库后，后端首次启动会自动完成建表和演示数据初始化，不需要在 Navicat 中手工导入 SQL。
+
 ### 4. 启动后端
 
 PowerShell 不会自动读取 `.env`，请先把所需值导入当前终端。下面示例中的值要与 `.env` 一致：
@@ -76,6 +88,18 @@ cd backend/demo
 ```powershell
 Invoke-RestMethod http://localhost:8080/healthz
 ```
+
+使用 IntelliJ IDEA 时，用 IDE 打开 `backend` 目录，并将主类设置为 `com.example.demo.DemoApplication`、模块设置为 `demo`、工作目录设置为 `backend/demo`。随后在运行配置的 **Environment variables** 中添加：
+
+| 变量 | 示例值 |
+| --- | --- |
+| `DB_URL` | `jdbc:mysql://localhost:3306/health?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai` |
+| `DB_USERNAME` | `root`（或你的本地 MySQL 用户名） |
+| `DB_PASSWORD` | 你的本地 MySQL 密码 |
+| `JWT_SECRET` | 至少 32 字符的随机密钥 |
+| `SPRING_FLYWAY_ENABLED` | `true` |
+
+终端中通过 `set` 或 `$env:` 设置的变量不一定会被已经打开的 IntelliJ 继承，因此从 IDE 运行时需要单独填写。运行配置通常保存在 `.idea` 中，该目录已被 Git 忽略；不要把真实密码或密钥提交到仓库。
 
 AI 是可选功能。未设置 `AI_API_KEY` 时后端仍正常启动，只有 AI 接口返回 `503`。启用 DeepSeek 时设置：
 
