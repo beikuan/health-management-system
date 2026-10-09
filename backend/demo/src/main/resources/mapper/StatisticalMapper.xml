@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.demo.mapper.StatisticalMapper">
+    <!-- 血氧统计 -->
+    <select id="getBloodOxygenCountData" resultType="com.example.demo.domain.BloodOxygenCountData">
+        SELECT
+            (SELECT bod.spo2
+             FROM health_data hd
+                      JOIN blood_oxygen_data bod USING (record_id)
+             WHERE hd.user_id = #{userId}
+               AND hd.data_type = 'BLOOD_OXYGEN'
+             ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestValue,
+
+        (SELECT DATE_FORMAT(hd.created_at, '%Y/%m/%d')
+         FROM health_data hd
+         WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'BLOOD_OXYGEN'
+                ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestDate,
+
+             (SELECT ROUND(AVG(bod.spo2), 2)
+            FROM health_data hd
+            JOIN blood_oxygen_data bod USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'BLOOD_OXYGEN'
+                AND hd.created_at >= (
+                SELECT DATE_SUB(MAX(hd2.created_at), INTERVAL 6 DAY)
+            FROM health_data hd2
+            WHERE hd2.user_id = #{userId}
+                AND hd2.data_type = 'BLOOD_OXYGEN')
+                ) AS weeklyAvg,
+
+             (SELECT ROUND(AVG(bod.spo2), 2)
+            FROM health_data hd
+            JOIN blood_oxygen_data bod USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'BLOOD_OXYGEN'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')) AS monthlyAvg,
+
+             (SELECT ROUND(AVG(bod.spo2), 2)
+            FROM health_data hd
+            JOIN blood_oxygen_data bod USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'BLOOD_OXYGEN'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-01-01')) AS yearlyAvg
+        FROM DUAL;
+    </select>
+
+    <!-- 心率统计 -->
+    <select id="getHeartRateRecord" resultType="com.example.demo.domain.HeartRateRecord">
+        SELECT
+            (SELECT hrd.bpm
+             FROM health_data hd
+                      JOIN heart_rate_data hrd USING (record_id)
+             WHERE hd.user_id = #{userId}
+               AND hd.data_type = 'HEART_RATE'
+             ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestValue,
+
+        (SELECT DATE_FORMAT(hd.created_at, '%Y/%m/%d')
+         FROM health_data hd
+         WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'HEART_RATE'
+                ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestDate,
+
+             (SELECT ROUND(AVG(hrd.bpm), 2)
+            FROM health_data hd
+            JOIN heart_rate_data hrd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'HEART_RATE'
+                AND hd.created_at >= (
+                SELECT DATE_SUB(MAX(hd2.created_at), INTERVAL 6 DAY)
+            FROM health_data hd2
+            WHERE hd2.user_id = #{userId}
+                AND hd2.data_type = 'HEART_RATE')
+                ) AS weeklyAvg,
+
+             (SELECT ROUND(AVG(hrd.bpm), 2)
+            FROM health_data hd
+            JOIN heart_rate_data hrd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'HEART_RATE'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')) AS monthlyAvg,
+
+             (SELECT ROUND(AVG(hrd.bpm), 2)
+            FROM health_data hd
+            JOIN heart_rate_data hrd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'HEART_RATE'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-01-01')) AS yearlyAvg
+        FROM DUAL;
+    </select>
+
+    <!-- 呼吸频率统计 -->
+    <select id="getRespirationCountData" resultType="com.example.demo.domain.RespirationCountData">
+        SELECT
+            (SELECT rd.rpm
+             FROM health_data hd
+                      JOIN respiration_data rd USING (record_id)
+             WHERE hd.user_id = #{userId}
+               AND hd.data_type = 'RESPIRATION'
+             ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestValue,
+
+        (SELECT DATE_FORMAT(hd.created_at, '%Y/%m/%d')
+         FROM health_data hd
+         WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'RESPIRATION'
+                ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestDate,
+
+             (SELECT ROUND(AVG(rd.rpm), 2)
+            FROM health_data hd
+            JOIN respiration_data rd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'RESPIRATION'
+                AND hd.created_at >= (
+                SELECT DATE_SUB(MAX(hd2.created_at), INTERVAL 6 DAY)
+            FROM health_data hd2
+            WHERE hd2.user_id = #{userId}
+                AND hd2.data_type = 'RESPIRATION')
+                ) AS weeklyAvg,
+
+             (SELECT ROUND(AVG(rd.rpm), 2)
+            FROM health_data hd
+            JOIN respiration_data rd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'RESPIRATION'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')) AS monthlyAvg,
+
+             (SELECT ROUND(AVG(rd.rpm), 2)
+            FROM health_data hd
+            JOIN respiration_data rd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'RESPIRATION'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-01-01')) AS yearlyAvg
+        FROM DUAL;
+    </select>
+
+    <!-- 步数统计 -->
+    <select id="getStepCountData" resultType="com.example.demo.domain.StepCountData">
+        SELECT
+            (SELECT sd.steps
+             FROM health_data hd
+                      JOIN step_data sd USING (record_id)
+             WHERE hd.user_id = #{userId}
+               AND hd.data_type = 'STEPS'
+             ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestValue,
+
+        (SELECT DATE_FORMAT(hd.created_at, '%Y/%m/%d')
+         FROM health_data hd
+         WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'STEPS'
+                ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestDate,
+
+             (SELECT ROUND(AVG(sd.steps), 2)
+            FROM health_data hd
+            JOIN step_data sd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'STEPS'
+                AND hd.created_at >= (
+                SELECT DATE_SUB(MAX(hd2.created_at), INTERVAL 6 DAY)
+            FROM health_data hd2
+            WHERE hd2.user_id = #{userId}
+                AND hd2.data_type = 'STEPS')
+                ) AS weeklyAvg,
+
+             (SELECT ROUND(AVG(sd.steps), 2)
+            FROM health_data hd
+            JOIN step_data sd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'STEPS'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')) AS monthlyAvg,
+
+             (SELECT ROUND(AVG(sd.steps), 2)
+            FROM health_data hd
+            JOIN step_data sd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'STEPS'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-01-01')) AS yearlyAvg
+        FROM DUAL;
+    </select>
+
+    <!-- 血压统计（收缩压 systolic） -->
+    <select id="getBloodPressureCountData" resultType="com.example.demo.domain.BloodPressureCountData">
+        SELECT
+            (SELECT bpd.systolic
+             FROM health_data hd
+                      JOIN blood_pressure_data bpd USING (record_id)
+             WHERE hd.user_id = #{userId}
+               AND hd.data_type = 'BLOOD_PRESSURE'
+             ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestValue,
+
+        (SELECT DATE_FORMAT(hd.created_at, '%Y/%m/%d')
+         FROM health_data hd
+         WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'BLOOD_PRESSURE'
+                ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestDate,
+
+             (SELECT ROUND(AVG(bpd.systolic), 2)
+            FROM health_data hd
+            JOIN blood_pressure_data bpd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'BLOOD_PRESSURE'
+                AND hd.created_at >= (
+                SELECT DATE_SUB(MAX(hd2.created_at), INTERVAL 6 DAY)
+            FROM health_data hd2
+            WHERE hd2.user_id = #{userId}
+                AND hd2.data_type = 'BLOOD_PRESSURE')
+                ) AS weeklyAvg,
+
+             (SELECT ROUND(AVG(bpd.systolic), 2)
+            FROM health_data hd
+            JOIN blood_pressure_data bpd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'BLOOD_PRESSURE'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')) AS monthlyAvg,
+
+             (SELECT ROUND(AVG(bpd.systolic), 2)
+            FROM health_data hd
+            JOIN blood_pressure_data bpd USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'BLOOD_PRESSURE'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-01-01')) AS yearlyAvg
+        FROM DUAL;
+    </select>
+
+    <!-- 尿酸统计 -->
+    <select id="getUricAcidCountData" resultType="com.example.demo.domain.UricAcidCountData">
+        SELECT
+            (SELECT uad.uric_acid_umol
+             FROM health_data hd
+                      JOIN uric_acid_data uad USING (record_id)
+             WHERE hd.user_id = #{userId}
+               AND hd.data_type = 'URIC_ACID'
+             ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestValue,
+
+        (SELECT DATE_FORMAT(hd.created_at, '%Y/%m/%d')
+         FROM health_data hd
+         WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'URIC_ACID'
+                ORDER BY hd.created_at DESC
+                LIMIT 1) AS latestDate,
+
+             (SELECT ROUND(AVG(uad.uric_acid_umol), 2)
+            FROM health_data hd
+            JOIN uric_acid_data uad USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'URIC_ACID'
+                AND hd.created_at >= (
+                SELECT DATE_SUB(MAX(hd2.created_at), INTERVAL 6 DAY)
+            FROM health_data hd2
+            WHERE hd2.user_id = #{userId}
+                AND hd2.data_type = 'URIC_ACID')
+                ) AS weeklyAvg,
+
+             (SELECT ROUND(AVG(uad.uric_acid_umol), 2)
+            FROM health_data hd
+            JOIN uric_acid_data uad USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'URIC_ACID'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')) AS monthlyAvg,
+
+             (SELECT ROUND(AVG(uad.uric_acid_umol), 2)
+            FROM health_data hd
+            JOIN uric_acid_data uad USING (record_id)
+            WHERE hd.user_id = #{userId}
+                AND hd.data_type = 'URIC_ACID'
+                AND hd.created_at >= DATE_FORMAT(CURDATE(), '%Y-01-01')) AS yearlyAvg
+        FROM DUAL;
+    </select>
+</mapper>

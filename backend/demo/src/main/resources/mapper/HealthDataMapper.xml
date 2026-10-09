@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.demo.mapper.HealthDataMapper">
+
+    <select id="getHeartRateCountData" resultType="heartRateCountData">
+        SELECT DATE_FORMAT(hd.created_at,'%m%d') date, avg(hrd.bpm) bpm
+        FROM health_data hd
+                 LEFT JOIN heart_rate_data hrd
+                           ON hd.record_id = hrd.record_id
+        WHERE hd.user_id = #{userId}
+          AND hd.data_type = 'HEART_RATE'
+          AND hd.created_at > NOW() - INTERVAL 30 DAY
+        GROUP BY DATE_FORMAT(hd.created_at, '%m%d')
+        ORDER BY DATE_FORMAT(hd.created_at, '%m%d') ASC;
+    </select>
+
+    <select id="getHeartRate" resultType="HeartRate">
+        SELECT hrd.bpm
+        FROM health_data hd
+                 LEFT JOIN heart_rate_data hrd ON hd.record_id = hrd.record_id
+        WHERE hd.user_id = #{userId}
+          AND hd.data_type = 'HEART_RATE'
+          AND hd.created_at = (
+            SELECT MAX(created_at)
+            FROM health_data
+            WHERE user_id = #{userId}
+              AND data_type = 'HEART_RATE'
+        );
+    </select>
+
+    <select id="getBloodOxygen" resultType="BloodOxygen">
+        SELECT bod.spo2
+        FROM health_data hd
+                 LEFT JOIN blood_oxygen_data bod ON hd.record_id = bod.record_id
+        WHERE hd.user_id = #{userId}
+          AND hd.data_type = 'BLOOD_OXYGEN'
+          AND hd.created_at = (
+            SELECT MAX(created_at)
+            FROM health_data
+            WHERE user_id = #{userId}
+              AND data_type = 'BLOOD_OXYGEN'
+        );
+
+    </select>
+
+    <select id="getRespiration" resultType="respiration">
+        SELECT rd.rpm,hd.record_id
+        FROM health_data hd
+                 LEFT JOIN respiration_data rd ON hd.record_id = rd.record_id
+        WHERE hd.user_id = #{userId}
+          AND hd.data_type = 'RESPIRATION'
+          AND hd.created_at = (
+            SELECT MAX(created_at)
+            FROM health_data
+            WHERE user_id = #{userId}
+              AND data_type = 'RESPIRATION'
+        );
+    </select>
+
+    <select id="getSteps" resultType="Steps">
+        SELECT SUM(sd.steps) AS steps
+        FROM health_data hd
+                 LEFT JOIN step_data sd ON hd.record_id = sd.record_id
+        WHERE hd.user_id = #{userId}
+          AND hd.data_type = 'STEPS'
+          AND DATE(hd.created_at) = (
+            SELECT DATE(MAX(created_at))
+            FROM health_data
+            WHERE user_id = #{userId}
+              AND data_type = 'STEPS'
+        );
+    </select>
+
+    <select id="getSleepTime" resultType="SleepTime">
+        SELECT ROUND(SUM(sd.duration_min) / 60, 2) AS hours
+        FROM health_data hd
+                 JOIN sleep_data sd ON hd.record_id = sd.record_id
+        WHERE hd.user_id = #{userId}
+          AND hd.data_type = 'SLEEP'
+          AND DATE(hd.created_at) = (
+            SELECT DATE(MAX(created_at))
+            FROM health_data
+            WHERE user_id = #{userId}
+              AND data_type = 'SLEEP'
+        );
+    </select>
+
+    <select id="getBloodPressure" resultType="BloodPressure">
+        SELECT bp.systolic, bp.diastolic
+        FROM health_data hd
+                 JOIN blood_pressure_data bp ON hd.record_id = bp.record_id
+        WHERE hd.user_id = #{userId}
+          AND hd.data_type = 'BLOOD_PRESSURE'
+          AND hd.created_at = (
+            SELECT MAX(created_at)
+            FROM health_data
+            WHERE user_id = #{userId}
+              AND data_type = 'BLOOD_PRESSURE'
+        );
+    </select>
+
+    <select id="getBloodSugar" resultType="BloodSugar">
+        SELECT bg.glucose_mmol mmol
+        FROM health_data hd
+                 JOIN glucose_data bg ON hd.record_id = bg.record_id
+        WHERE hd.user_id = #{userId}
+          AND hd.data_type = 'BLOOD_GLUCOSE'
+          AND hd.created_at = (
+            SELECT MAX(created_at)
+            FROM health_data
+            WHERE user_id = #{userId}
+              AND data_type = 'BLOOD_GLUCOSE'
+        );
+    </select>
+
+    <select id="getUricacid" resultType="uricacid">
+        SELECT ua.uric_acid_umol umol
+        FROM health_data hd
+                 JOIN uric_acid_data ua ON hd.record_id = ua.record_id
+        WHERE hd.user_id = #{userId}
+          AND hd.data_type = 'URIC_ACID'
+          AND hd.created_at = (
+            SELECT MAX(created_at)
+            FROM health_data
+            WHERE user_id = #{userId}
+              AND data_type = 'URIC_ACID'
+        );
+    </select>
+
+    <select id="getCholesterol" resultType="Cholesterol">
+        SELECT
+            bl.total_cholesterol mmol
+        FROM
+            health_data hd
+                JOIN
+            blood_lipid_data bl ON hd.record_id = bl.record_id
+        WHERE
+            hd.user_id = #{userId}
+          AND hd.data_type = 'BLOOD_LIPID'
+          AND hd.created_at = (
+            SELECT MAX(created_at)
+            FROM health_data
+            WHERE user_id = #{userId}
+              AND data_type = 'BLOOD_LIPID'
+        );
+    </select>
+
+    <select id="getStepData" resultType="StepData">
+        SELECT
+            DATE_FORMAT(c.timestamp,'%m%d') date,
+            avg(s.steps) step,
+            avg(s.calories) calorie
+        FROM
+            step_data s
+                JOIN
+                (SELECT * FROM health_data WHERE data_type = 'STEPS') c
+                ON
+                    s.record_id = c.record_id
+        WHERE
+            c.user_id = #{userId}  -- Replace with actual user_id
+          AND c.timestamp >= NOW() - INTERVAL 40 DAY
+        GROUP BY  DATE_FORMAT(c.timestamp,'%m%d')
+        ORDER BY  DATE_FORMAT(c.timestamp,'%m%d') ASC;
+
+    </select>
+
+    <select id="getDistance" resultType="Distance">
+        SELECT ROUND(sd.distance_m / 1000, 2) AS distance,sd.calories
+        FROM health_data hd
+                 LEFT JOIN step_data sd ON hd.record_id = sd.record_id
+        WHERE hd.user_id = #{userId}
+          AND hd.data_type = 'STEPS'
+          AND hd.created_at = (
+            SELECT MAX(created_at)
+            FROM health_data
+            WHERE user_id = #{userId}
+              AND data_type = 'STEPS'
+        );
+    </select>
+
+    <select id="getHealthData" resultType="HealthData">
+        SELECT
+            base.date,
+            base.calories,
+            ROUND(base.distance_m/1000, 2) AS distance,
+            IFNULL(daily_hr.avg_heart_rate, 90) AS bpm
+        FROM (
+                 SELECT
+                     DATE(hd.timestamp) AS date,
+                     SUM(sd.calories) AS calories,
+                     SUM(sd.distance_m) AS distance_m
+                 FROM
+                     health_data hd
+                         JOIN step_data sd ON hd.record_id = sd.record_id
+                 WHERE
+                     hd.user_id = #{userId}
+                   AND hd.data_type = 'STEPS'
+                 GROUP BY
+                     DATE(hd.timestamp)
+                 ORDER BY DATE(hd.timestamp) DESC
+                 LIMIT 7  -- 只获取最近的7条记录
+             ) AS base
+                 LEFT JOIN (
+            SELECT
+                DATE(hd.timestamp) AS date,
+                AVG(hr.bpm) AS avg_heart_rate
+            FROM
+                health_data hd
+                    JOIN heart_rate_data hr ON hd.record_id = hr.record_id
+            WHERE
+                 hd.user_id = #{userId}
+              AND hd.data_type = 'HEART_RATE'
+            GROUP BY
+                DATE(hd.timestamp)
+        ) AS daily_hr ON base.date = daily_hr.date
+        ORDER BY base.date DESC;
+    </select>
+
+
+    <select id="getTargetStepData" resultType="TargetStep">
+        SELECT user_id userId, targetstep
+        FROM target_step
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="updateStepData">
+        INSERT INTO target_step (user_id, targetstep) VALUES (#{userId}, #{targetStep})
+        ON DUPLICATE KEY UPDATE targetstep = VALUES(targetstep)
+    </insert>
+
+    <select id="getSportTime" resultType="SportTime">
+        SELECT user_id userId, sporttime
+        FROM sport_time_data
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="updateSportTime">
+        INSERT INTO sport_time_data (user_id, sporttime) VALUES (#{userId}, #{sportTime})
+        ON DUPLICATE KEY UPDATE sporttime = VALUES(sporttime)
+    </insert>
+
+    <select id="getTargetHeat" resultType="Heat">
+        SELECT user_id userId, targetheat TargetHeat
+        FROM target_heat_data
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="updateTargetHeat">
+        INSERT INTO target_heat_data (user_id, targetheat) VALUES (#{userId}, #{targetHeat})
+        ON DUPLICATE KEY UPDATE targetheat = VALUES(targetheat)
+    </insert>
+
+
+
+
+
+
+
+
+</mapper>

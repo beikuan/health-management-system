@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.demo.mapper.UsersMapper">
+
+    <!-- 查询所有用户信息 -->
+    <!-- id对应mapper接口里面的方法名 -->
+    <!-- resultType指定返回的数据转化什么格式 -->
+    <select id="list" resultType="com.example.demo.domain.User">
+        select user_id userId, username, nick_name name, email, created_at
+        from users
+    </select>
+
+    <select id="getUserById" resultType="com.example.demo.domain.User">
+        select user_id userId,username,`password`, nick_name name, created_at
+        from users
+        where user_id = #{userId}
+    </select>
+
+    <select id="countUsers" resultType="int">
+        SELECT count(*) FROM users
+    </select>
+
+    <select id="listByCondition" resultType="User">
+        select user_id userId,username,`password`, nick_name name, created_at
+        from users
+        WHERE nick_name LIKE concat('%', #{name}, '%')
+          AND email = #{email}
+    </select>
+
+    <select id="listByCondition1" resultType="User">
+        select user_id userId,username,`password`, nick_name name, created_at
+        from users
+        WHERE nick_name LIKE concat('%', #{name}, '%')
+          AND email = #{email}
+    </select>
+
+    <select id="listByCondition2" resultType="user">
+        <![CDATA[
+            select user_id userId,username,`password`, nick_name name, created_at
+            from users
+            WHERE user_id < #{userId}
+        ]]>
+    </select>
+
+    <select id="getBaseList" resultType="userBaseInfo">
+        select user_id userId,username, nick_name nickName, email
+        from users
+    </select>
+
+    <select id="getUserBaseProfile" resultType="userBaseProfile">
+        SELECT
+            t1.user_id AS userId,
+            t1.nick_name AS nickName,
+            t2.gender,
+            t2.height_cm AS heightCm
+        FROM
+            users AS t1
+                LEFT JOIN
+            user_profiles AS t2
+            ON
+                t1.user_id = t2.user_id
+    </select>
+
+    <select id="test1" resultType="userBaseInfo">
+        SELECT * FROM users u
+        LEFT JOIN user_profiles up
+        ON u.user_id = up.user_id
+        where 1 = 1
+        <if test="gender != null and gender != ''">
+            and up.gender = #{gender}
+        </if>
+        <if test="heightCm != null">
+            and up.height_cm > #{heightCm}
+        </if>
+        <if test="weightKg != null">
+            and up.weight_kg > #{weightKg}
+        </if>
+    </select>
+
+    <select id="test2" resultType="userBaseInfo">
+        SELECT * FROM users u
+        LEFT JOIN user_profiles up
+        ON u.user_id = up.user_id
+        <where>
+            <if test="gender != null and gender != ''">
+                and up.gender = #{gender}
+            </if>
+            <if test="heightCm != null">
+                and up.height_cm > #{heightCm}
+            </if>
+            <if test="age != null">
+                AND YEAR(NOW()) - YEAR(up.birth_date) = #{age}
+            </if>
+        </where>
+    </select>
+
+    <select id="getUsersAvgSteps" resultType="usersAvgSteps">
+        SELECT u.user_id userId,u.nick_name nickName,AVG(sd.steps) avgSteps
+        FROM users u
+        LEFT JOIN health_data hd
+                  ON u.user_id = hd.user_id
+        LEFT JOIN step_data sd
+                  ON hd.record_id = sd.record_id
+        WHERE hd.data_type = 'STEPS'
+          AND YEAR(hd.created_at) = #{year}
+          AND MONTH(hd.created_at) = #{month}
+        GROUP BY u.user_id
+    </select>
+
+    <!-- in (1,20,33,41)
+        collection：要遍历的数据，这里ids就是参数名
+        item：每一次遍历出来元素
+        separator：分隔符
+    -->
+    <select id="test3" resultType="userBaseInfo">
+        SELECT * FROM users
+        WHERE user_id in (
+            <foreach collection="ids" item="id" separator=",">
+                #{id}
+            </foreach>
+        )
+    </select>
+
+    <resultMap id="getUserStepsMap" type="userSteps">
+        <id property="userId" column="user_id"></id>
+        <result property="nickName" column="nick_name"></result>
+        <collection property="infos" ofType="userStepsInfo">
+            <id property="recordId" column="record_id"></id>
+            <result property="createdAt" column="created_at" ></result>
+            <result property="steps" column="steps" ></result>
+            <result property="calories" column="calories" ></result>
+            <result property="distanceM" column="distance_m" ></result>
+        </collection>
+    </resultMap>
+    <select id="getUserSteps" resultMap="getUserStepsMap">
+        SELECT u.user_id, u.nick_name, hd.record_id, hd.created_at, sd.steps, sd.calories, sd.distance_m
+        FROM users u
+                 LEFT JOIN health_data hd
+                           ON u.user_id = hd.user_id AND hd.data_type = 'STEPS'
+                 LEFT JOIN step_data sd
+                           ON sd.record_id = hd.record_id
+        WHERE u.user_id = #{userId}
+    </select>
+
+     <insert id="create">
+        insert into users (user_id, username, password, email, nick_name, created_at)
+            values (#{userId}, #{username}, #{password}, #{email}, #{name}, now())
+     </insert>
+
+     <update id="update">
+         update users
+            <set>
+                <if test="username != null and username != ''">
+                    username = #{username},
+                </if>
+                <if test="password != null and password != ''">
+                    password = #{password},
+                </if>
+                <if test="name != null and name != ''">
+                    nick_name = #{name},
+                </if>
+                <if test="email != null and email != ''">
+                    email = #{email},
+                </if>
+                updated_at = now()
+            </set>
+            where user_id = #{userId}
+     </update>
+
+     <delete id="delete">
+         delete from users
+            where user_id = #{userId}
+     </delete>
+
+    <select id="getUserByUsername" resultType="user">
+        select user_id userId, username, password, email, nick_name name
+            from users
+            where username = #{username}
+    </select>
+
+
+    <select id="getUserProfiles" resultType="userProfiles">
+        SELECT birth_date birthday,gender,height_cm heightCm,weight_kg weightKg
+        FROM users,user_profiles info
+        WHERE users.user_id = info.user_id AND users.user_id = #{userId}
+    </select>
+
+</mapper>

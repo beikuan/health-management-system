@@ -1,0 +1,19 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/login/Login",
+    "pages/login/Register",
+    "pages/Me/healthyRate",
+    "pages/Me/ringpages",
+    "pages/Me/sportPlan",
+    "pages/Me/targetSet",
+    "pages/tabs/TabsPage",
+    "pages/Exercise/record_card",
+    "pages/Me/TargetStep",
+    "pages/Me/TargetSportTime",
+    "pages/Me/TargetHeat",
+    "pages/Me/setting",
+    "pages/login/EditUserInfo",
+    "pages/health/AddHealthRecord"
+  ]
+}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.demo.mapper.CaloriesData">
+    <select id="getCaloriesCountData" resultType="com.example.demo.domain.CaloriesData">
+        SELECT
+            base.date,
+            base.calories,
+            base.steps,
+            IFNULL(sleep.total_sleep_minutes, 0) AS sleepMinutes
+        FROM (
+                 SELECT
+                     DATE_FORMAT(hd.created_at, '%Y-%m-%d') AS date,
+            SUM(sd.calories) AS calories,
+            SUM(sd.steps) AS steps
+                 FROM
+                     health_data hd
+                     JOIN
+                     step_data sd ON hd.record_id = sd.record_id
+                 WHERE
+                     hd.user_id = #{userId}
+                   AND hd.data_type = 'STEPS'
+                 GROUP BY
+                     DATE_FORMAT(hd.created_at, '%Y-%m-%d')
+             ) AS base
+                 LEFT JOIN (
+            SELECT
+                hd.user_id,
+                DATE(hd.timestamp) AS date,
+            SUM(sd.duration_min) AS total_sleep_minutes
+        FROM
+            health_data hd
+            JOIN
+            sleep_data sd ON hd.record_id = sd.record_id
+        WHERE
+            hd.user_id = #{userId}
+          AND hd.data_type = 'SLEEP'
+        GROUP BY
+            hd.user_id, DATE(hd.timestamp)
+            ) AS sleep ON base.date = sleep.date
+        ORDER BY base.date ASC;
+    </select>
+
+
+</mapper>

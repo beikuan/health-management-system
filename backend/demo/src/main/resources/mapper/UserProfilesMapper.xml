@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.demo.mapper.UserProfilesMapper">
+
+    <insert id="upsert">
+        INSERT INTO user_profiles (user_id, birth_date, gender, height_cm, weight_kg)
+        VALUES (#{userId}, NULLIF(#{birthday}, ''), NULLIF(#{gender}, ''), #{heightCm}, #{weightKg})
+        ON DUPLICATE KEY UPDATE
+            birth_date = COALESCE(VALUES(birth_date), birth_date),
+            gender = COALESCE(VALUES(gender), gender),
+            height_cm = COALESCE(VALUES(height_cm), height_cm),
+            weight_kg = COALESCE(VALUES(weight_kg), weight_kg)
+    </insert>
+
+</mapper>
