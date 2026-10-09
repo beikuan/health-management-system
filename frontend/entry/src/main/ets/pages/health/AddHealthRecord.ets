@@ -122,7 +122,8 @@ struct AddHealthRecord {
         JSON.stringify(this.buildBody()));
       if (response.responseCode === 201) {
         promptAction.showToast({ message: '健康数据已保存' });
-        router.back();
+        // 重建主页面，使首页、统计和运动记录同步读取最新数据。
+        router.replaceUrl({ url: 'pages/tabs/TabsPage' });
       } else if (response.responseCode !== 401) {
         this.errorMessage = '保存失败，请检查输入内容';
       }

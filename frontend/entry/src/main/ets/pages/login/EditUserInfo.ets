@@ -272,10 +272,16 @@ struct EditUserInfo {
             http.createHttp().request(`${API_BASE_URL}/user/v1/edit`, {
               header: {
                 "Authorization": `Bearer ${token}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/json'
               },
               method: http.RequestMethod.POST,
-              extraData: `name=${this.userInfo.name}&birthday=${this.userinfo.birthday}&gender=${this.userinfo.gender}&height=${this.userinfo.heightCm}&weight=${this.userinfo.weightKg}`
+              extraData: JSON.stringify({
+                name: this.userInfo.name,
+                birthday: this.userinfo.birthday,
+                gender: this.userinfo.gender,
+                height: this.userinfo.heightCm,
+                weight: this.userinfo.weightKg
+              })
             }
             )
 

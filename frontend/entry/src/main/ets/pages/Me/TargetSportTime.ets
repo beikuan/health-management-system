@@ -222,7 +222,10 @@ struct StepGoalSetting {
 
             const httpRequest = http.createHttp();
             const res = await httpRequest.request(`${API_BASE_URL}/health/sport/update`, {
-              header: { "Authorization": `Bearer ${token}` },
+              header: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+              },
               method: http.RequestMethod.POST,
               extraData: JSON.stringify({
                 userId: this.userId,
