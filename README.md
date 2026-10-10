@@ -6,9 +6,43 @@
 
 ## 界面预览
 
-| 登录 | 首页 |
+以下截图来自 HarmonyOS 模拟器，使用脱敏的 `demo` 演示账号和示例数据。
+
+| 登录 | 首页：习惯与健康指标 |
 | --- | --- |
-| ![登录界面](docs/images/login.jpeg) | ![健康首页](docs/images/dashboard.jpeg) |
+| ![登录界面](docs/images/login.jpeg) | ![首页](docs/images/home.jpeg) |
+
+| 数据统计 | 运动记录 |
+| --- | --- |
+| ![数据统计](docs/images/statistics.jpeg) | ![运动记录](docs/images/exercise.jpeg) |
+
+| 个人中心与目标入口 | 录入健康数据 |
+| --- | --- |
+| ![个人中心](docs/images/profile.jpeg) | ![录入健康数据](docs/images/add-record.jpeg) |
+
+| AI 未配置时的提示 | 历史回顾 |
+| --- | --- |
+| ![AI 未配置提示](docs/images/ai.jpeg) | ![历史回顾](docs/images/dashboard.jpeg) |
+
+## 功能演示脚本
+
+建议按照“登录 → 首页 → 统计 → 运动 → 录入 → 个人中心 → AI”的顺序演示，约 5～8 分钟即可完整走完主流程：
+
+1. **登录**：输入 `demo / demo123`，说明客户端启动时会检查 Token；无效 Token 会被清理并回到登录页。
+2. **首页**：介绍习惯卡片，以及心率、血氧、呼吸率、步数、睡眠、血压等指标的状态提示。
+3. **数据统计**：切换底部“数据统计”，展示当前值、周均、月均和年均。
+4. **运动记录**：切换“运动记录”，说明运动类型、距离、时长、消耗和平均心率均来自真实记录。
+5. **录入闭环**：点击右下角 `+`，选择心率或其他指标，填写数值并保存；回到首页或统计页确认数据刷新。
+6. **个人中心**：展示资料、心率区间和锻炼目标入口；修改目标后返回首页查看变化。
+7. **AI 降级**：点击 AI 图标。未设置 `AI_API_KEY` 时显示友好提示，其他健康功能仍可正常使用。
+8. **退出登录**：退出后 Token 被清理，不能通过返回键回到已登录页面；再次登录即可验证完整闭环。
+
+### 演示前检查清单
+
+- Navicat 中的 `health` 数据库已创建，MySQL 服务已启动。
+- IntelliJ IDEA 运行 `DemoApplication` 后，`http://localhost:8080/healthz` 返回 `code: 200`。
+- DevEco Studio 已打开 `frontend`，模拟器通过 `http://10.0.2.2:8080` 访问宿主机。
+- 如果之前连接过其他数据库，先清理模拟器应用数据或卸载重装，避免旧 Token 引用旧用户。
 
 ## 技术栈与结构
 
@@ -19,10 +53,12 @@
 
 ```text
 health-management-system/
-├─ backend/demo/        Spring Boot API
-├─ frontend/            HarmonyOS 客户端
+├─ backend/demo/        Spring Boot API、Flyway 迁移和测试
+├─ frontend/            HarmonyOS 客户端（entry 模块）
+├─ docs/images/         README 演示截图
 ├─ docker-compose.yml   MySQL 8 开发环境
-└─ .env.example         环境变量模板（不含真实密钥）
+├─ .env.example         环境变量模板（不含真实密钥）
+└─ README.md            启动、演示、接口和故障排查
 ```
 
 ## 快速启动
@@ -76,7 +112,7 @@ PowerShell 不会自动读取 `.env`，请先把所需值导入当前终端。�
 
 ```powershell
 $env:DB_URL = 'jdbc:mysql://localhost:3306/health?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai'
-$env:DB_USERNAME = 'health'
+$env:DB_USERNAME = 'root'
 $env:DB_PASSWORD = '<your-database-password>'
 $env:JWT_SECRET = '<your-random-secret-at-least-32-characters>'
 cd backend/demo
@@ -127,6 +163,12 @@ cd frontend
 
 未配置签名时可完成编译和 HAP 打包，但 DevEco 会提示跳过签名；安装到设备前请启用本地自动签名。
 
+## 数据库与演示数据说明
+
+项目默认使用数据库名 `health`。启动后 Flyway 会按版本执行迁移，创建用户、资料、目标、习惯、健康记录和运动记录相关表，并导入脱敏的 `demo` 示例账号。Navicat 中看到的 `test` 库属于旧项目结构，不是本项目的推荐运行库。
+
+如果后端已经换过数据库但客户端仍显示“服务暂时不可用”，通常是模拟器保存了旧数据库签发的 Token。停止应用后清理应用数据或卸载重装，再使用当前 `health` 库中的账号登录即可；这不会删除 Navicat 中的数据库数据。
+
 ## 测试
 
 ```powershell
@@ -164,13 +206,28 @@ Content-Type: application/json
 
 接口统一返回 `{"msg":"...","code":200,"data":...}`，并使用 HTTP `400/401/404/409/500/503` 区分参数、身份、资源、冲突、系统和可选服务错误。
 
+### PowerShell 快速验证一条数据链路
+
+```powershell
+$body = @{ username = 'demo'; password = 'demo123' } | ConvertTo-Json
+$login = Invoke-RestMethod -Method Post -Uri http://localhost:8080/user/v1/login -ContentType 'application/json' -Body $body
+$headers = @{ Authorization = "Bearer $($login.data.token)" }
+$record = @{ type = 'HEART_RATE'; recordedAt = '2026-10-10T10:00:00'; value = 72 } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://localhost:8080/health/records -Headers $headers -ContentType 'application/json' -Body $record
+Invoke-RestMethod -Uri 'http://localhost:8080/health/records?type=HEART_RATE' -Headers $headers
+```
+
+健康录入页会根据指标切换字段；步数记录还可以填写运动类型、时长、距离、卡路里和平均心率。所有查询和删除接口都按当前 Token 的用户 ID 做隔离。
+
 ## 常见问题
 
+- **客户端显示“服务暂时不可用”**：先确认后端 `healthz` 返回 200，再检查模拟器地址是否为 `10.0.2.2`。如果曾切换过数据库，清理模拟器应用数据或卸载重装，避免旧 Token 指向旧用户。
 - **客户端连不上后端**：模拟器使用 `10.0.2.2`；真机和电脑需在同一网络，并放行 8080 端口。
-- **后端启动提示缺少配置**：必须设置 `DB_PASSWORD` 和不少于 32 字符的 `JWT_SECRET`。
+- **后端启动提示缺少配置**：必须设置 `DB_PASSWORD` 和不少于 32 字符的 `JWT_SECRET`；从 IntelliJ 启动时要在运行配置中填写。
 - **AI 返回 503**：这是未配置 AI 时的预期行为，不影响其他功能。
 - **Flyway 提示非空库**：请使用新的 `health` 数据库或新的 Docker volume，不要把迁移直接套到旧的手工表结构。
 - **HAP 无法安装**：构建产物默认未签名，请在 DevEco Studio 中配置本地自动签名。
+- **DevEco Studio 提示内存不足**：关闭不需要的工程和模拟器，增加 IDE/模拟器内存后重新同步；这通常不是业务代码错误。
 
 ## 安全说明
 
